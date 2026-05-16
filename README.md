@@ -1,253 +1,146 @@
-# 🚀 DSHub Internship Program – Backend Repository
-## Final Weeks (Week 8–9) Assignment — Cohort A 2026
+# DSHub Atlas Authentication Module
 
-**Track:** Backend Development  
-**Case Partner:** Otondo Team by DSHub  
-**Theme:** *From Learning to Legacy: Telling the Story of DSHub Internship*  
+Production-minded authentication and authorization module for the DSHub Graduation Digital Experience Platform.
 
----
+## Scope
 
-## 🌍 Focus SDGs
-- SDG 8 — Decent Work & Economic Growth  
-- SDG 9 — Industry, Innovation & Infrastructure  
+This delivery covers the **Authentication & Role Management System** only.
 
----
+It is intended to be the shared access-control layer that the rest of the backend can build on top of:
 
-## 📅 Assignment Duration
-**Tuesday, 12th May 2026 – Sunday, 24th May 2026**
+- CRUD modules can plug protected routes into the auth middleware
+- Analytics endpoints can reuse the same JWT and RBAC checks
+- DevOps and CI/CD can package and deploy this module with the wider backend later
 
----
+This keeps responsibilities clear across the team and avoids overlap with other backend owners.
 
-## ⚙️ Backend Mission Statement
+## What This Module Covers
 
-As the Backend Team, your responsibility is to design and implement a **secure, scalable, and production-ready backend system** powering the DSHub Graduation Digital Experience Platform.
+- JWT-based authentication with short-lived access tokens
+- Refresh token rotation with database-backed session revocation
+- Role-based access control for `admin`, `mentor`, and `intern`
+- Password hashing with `bcryptjs`
+- Secure login, refresh, logout, and current-user workflows
+- Swagger API documentation for team integration
+- PostgreSQL schema for users and refresh sessions
 
-You are building the **core infrastructure** that supports:
-- Authentication & authorization
-- Data management
-- Analytics processing
-- Secure API communication
-- System scalability & reliability
+## Team-Friendly Backend Story
 
-This is not a tutorial project — it is a **real-world backend system simulation**.
+This auth module is designed around a simple onboarding and access flow:
 
----
+1. The platform boots with a first admin account from environment variables.
+2. Interns can self-register through the public onboarding endpoint.
+3. Admins can sign in and provision mentors, interns, or other admins from a protected route.
+4. All other backend modules can protect their routes with the shared auth and RBAC middleware.
 
-## 🧠 Backend Core Responsibilities
+That means your teammates handling platform CRUD, dashboards, or deployment do not need to rebuild auth logic. They only integrate against it.
 
-You are expected to:
+## Architecture
 
-- Design scalable backend architecture
-- Build RESTful APIs (or GraphQL if agreed)
-- Implement secure authentication systems
-- Manage databases efficiently
-- Ensure system performance & optimization
-- Support frontend and product requirements
-- Collaborate with Cybersecurity for hardening
-- Prepare production-ready deployment structure
+The service is built with Express and PostgreSQL using a modular structure:
 
----
+- `src/modules/auth`: login, register, refresh, logout, and current-user logic
+- `src/modules/users`: admin-only user creation and user listing
+- `src/middlewares`: validation, auth protection, RBAC, and error handling
+- `src/config`: environment and database setup
+- `database/schema.sql`: required PostgreSQL tables and enum definitions
 
-## 🏗️ Key Backend Modules
+## Authentication Design
 
-### 1️⃣ Authentication & Role Management System
+1. `POST /api/v1/auth/login` validates credentials and returns an access token.
+2. A refresh token is stored as an `httpOnly` cookie and its SHA-256 hash is saved in PostgreSQL.
+3. `POST /api/v1/auth/refresh` rotates the refresh token and issues a fresh access token.
+4. `POST /api/v1/auth/logout` revokes the refresh session in the database and clears the cookie.
+5. Protected routes use `Authorization: Bearer <accessToken>` and RBAC middleware.
 
-**Objective:** Secure user identity and access control
+## Onboarding And Role Provisioning
 
-#### Features:
-- JWT or session-based authentication
-- Role-based access control (RBAC):
-  - Admin
-  - Mentor
-  - Intern
-- Password hashing & encryption (bcrypt recommended)
-- Secure login/logout flow
-- Token expiration & refresh handling (optional advanced)
+- Public intern onboarding happens through `POST /api/v1/auth/register`
+- First-admin access happens through the bootstrap env values
+- Admin-led account provisioning happens through `POST /api/v1/users`
+- Role enforcement is handled by reusable middleware before protected handlers run
 
-#### Output:
-- Auth API endpoints
-- Middleware for route protection
-- Documentation of auth flow
+## API Surface
 
----
+### Public
 
-### 2️⃣ Graduation Platform Core APIs
+- `GET /api/v1/health`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
 
-**Objective:** Power the frontend graduation platform
+### Protected
 
-#### Required Endpoints:
-- Cohort data (GET/POST/UPDATE/DELETE)
-- Intern profiles management
-- Mentor profiles
-- Testimonials
-- Media/gallery management
-- Graduation highlights
-- Countdown data source
+- `GET /api/v1/auth/me`
 
-#### Requirements:
-- Clean RESTful structure
-- Pagination where necessary
-- Validation & error handling
-- Modular architecture (MVC or similar)
+### Admin Only
 
----
+- `GET /api/v1/users`
+- `POST /api/v1/users`
 
-### 3️⃣ Graduation Analytics Dashboard Backend
+## Ownership Boundary
 
-**Objective:** Provide data for admin analytics dashboard
+This module intentionally does **not** implement:
 
-#### Features:
-- Intern participation metrics
-- Submission tracking data
-- Engagement statistics
-- Cohort performance analytics
-- Track-based breakdown (Frontend, Backend, Cybersecurity, Product)
+- internship content CRUD
+- gallery/testimonial/highlight management
+- analytics aggregation APIs
+- Docker and CI/CD pipeline automation
 
-#### Output:
-- Analytics API endpoints
-- Aggregation queries (MongoDB aggregation or SQL joins)
-- Optimized response handling
+Those can be added by the relevant owners while reusing this module for authentication, route protection, and role checks.
 
----
+## Local Setup
 
-### 4️⃣ Security & API Hardening Support
+1. Copy `.env.example` to `.env`.
+2. Update `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET`.
+3. Install dependencies:
 
-**Objective:** Ensure backend is secure by design
+```bash
+npm install
+```
 
-#### Responsibilities:
-- Input validation & sanitization
-- Rate limiting implementation
-- Secure headers configuration
-- API access restrictions
-- Logging & monitoring support
+4. Create the database tables by running [database/schema.sql](C:/Users/buthm/source/repos/DSHub-Atlas/database/schema.sql).
+5. Optional: set `ADMIN_BOOTSTRAP_*` values in `.env` to auto-create the first admin if none exists.
+6. Start the API:
 
-#### Collaboration:
-Work closely with Cybersecurity Track for:
-- OWASP Top 10 compliance
-- Vulnerability fixes
-- Security testing feedback integration
+```bash
+npm run dev
+```
 
----
-
-### 5️⃣ Deployment & DevOps Support
+## Default Seed Credentials
 
-**Objective:** Ensure backend is production-ready
+If you use the bootstrap env values from `.env.example`, the initial admin account is:
 
-#### Requirements:
-- Docker containerization
-- Environment configuration (.env setup)
-- CI/CD pipeline support (GitHub Actions or similar)
-- Database deployment setup
-- Error logging strategy
+- Email: `admin@dshub.com`
+- Password: `SecurePass123`
 
-#### Output:
-- Dockerfile
-- docker-compose.yml (if needed)
-- Deployment guide
+Change this immediately in any shared or deployed environment.
 
----
+## Swagger Docs
 
-## 🔐 Technical Expectations
+After the server starts, open:
 
-- Clean, modular codebase
-- Scalable folder structure
-- Environment-based configuration
-- API documentation (Swagger/Postman)
-- Consistent naming conventions
-- Production-grade error handling
+- [http://localhost:4000/api-docs](http://localhost:4000/api-docs)
 
----
+## Notes For Frontend And Product Teams
 
-## 🤝 Collaboration Structure
+- `register` is intentionally limited to interns for safer public onboarding.
+- Admins can create mentor, intern, or admin accounts through `POST /api/v1/users`.
+- The refresh endpoint supports cookie-based rotation and an optional body token fallback for non-browser clients.
+- Auth endpoints are rate-limited to reduce brute-force risk.
+- The server can bootstrap the first admin automatically, which is safer than committing a long-lived password hash into SQL.
+- `CORS_ORIGIN` supports comma-separated local origins, which is useful for both frontend development and Swagger testing.
 
-This is a **multi-track system**, meaning backend depends on:
+## Push Checklist
 
-- 🎨 Frontend → API consumption
-- 🔐 Cybersecurity → system hardening
-- 📊 Product → feature alignment
-- ⚙️ DevOps → deployment pipeline
+- commit the source files, schema, package files, and docs
+- do not commit `.env`
+- keep `.env.example` as the safe shared template
 
-### Rules of Collaboration:
-- All endpoints must be documented before integration
-- API changes must be communicated early
-- No breaking changes without notification
-- Cross-team testing is mandatory
+## Suggested Next Backend Steps
 
----
-
-## 📦 Key Deliverables
-
-### 1. Backend API System
-- Fully working backend application
-- Hosted API base URL
-
-### 2. Authentication System
-- Secure login/register system
-- Role-based access control
-
-### 3. Database Design
-- Schema design (ERD or document)
-- Seed data (if applicable)
-
-### 4. Analytics APIs
-- Metrics endpoints
-- Aggregated reporting data
-
-### 5. Deployment Package
-- Docker setup
-- Environment config guide
-- CI/CD workflow (if available)
-
-### 6. Documentation
-- API documentation (Swagger/Postman)
-- Setup instructions
-- System architecture overview
-
----
-
-## 📅 Presentation Schedule
-
-### 🟡 Cold Seat (Premium Interns Only)
-- **Friday, 15th May 2026**
-- **Friday, 22nd May 2026**
-- Time: 8:30PM WAT  
-Each member presents:
-- Contributions
-- Challenges
-- Progress updates
-- Key outputs
-
----
-
-### 🔴 Hot Seat (Track Leaders Only)
-- **Saturday, 16th May 2026**
-- **Saturday, 23rd May 2026**
-- Time: 8:30PM WAT  
-Focus:
-- Team progress
-- System architecture
-- API readiness
-- Collaboration structure
-- Production readiness
-
----
-
-## ⏰ Final Submission Deadline
-**Sunday, 24th May 2026 — 11:59PM WAT**
-
----
-
-## ⚠️ Final Note
-
-This backend system is expected to behave like a **real production infrastructure**, not a school assignment.
-
-Your success depends on:
-- Clean architecture
-- Secure design
-- Scalable APIs
-- Strong collaboration
-- Delivery consistency
-
----
-
-## 🚀 “Build it like it will go live tomorrow.”
+- Add email verification and password reset flows
+- Add audit logging for role changes and auth events
+- Add automated tests for auth and RBAC paths
+- Add Docker and CI once the wider backend scope is ready

@@ -12,6 +12,10 @@ __pycache__/
 # Logs
 logs/
 
+# Node
+node_modules/
+npm-debug.log*
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -26,3 +30,4 @@ ENV/
 *.swp
 *.swo
 *.tmp
+.vs/
