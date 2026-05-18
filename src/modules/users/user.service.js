@@ -89,7 +89,7 @@ const findUserById = async (userId) => {
     [userId]
   );
 
-  return result.rows[0] || null;
+  return result.rows[0] ? sanitizeUser(result.rows[0]) : null;
 };
 
 const listUsers = async () => {
