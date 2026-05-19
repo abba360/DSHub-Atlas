@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.env
+logs
+.git
+Dockerfile
+.dockerignore
+package-lock.json
+*.md
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.env
+logs
+database/migrations

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: dshub-atlas-auth
+    env: docker
+    plan: starter
+    dockerfilePath: Dockerfile
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
+        sync: false
